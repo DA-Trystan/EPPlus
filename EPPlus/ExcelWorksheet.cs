@@ -4382,6 +4382,11 @@ namespace OfficeOpenXml
                 var root = Directory.GetDirectoryRoot(this.Workbook._package.File.FullName);
                 link = root+link;
             }
+            else if (!link.Contains("/"))
+            {
+                var dir = this.Workbook._package.File.Directory.FullName;
+                link = dir + "/" + link;
+            }
             var split = link.Split(new char[] { Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar }, StringSplitOptions.RemoveEmptyEntries);
             if (split.Length > 0)
             {

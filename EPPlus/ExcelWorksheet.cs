@@ -4406,7 +4406,7 @@ namespace OfficeOpenXml
             {
                 for (int i = 0; i < Workbook._externalReferences.Count; i++)
                 {
-                    fullAddress = Regex.Replace(fullAddress, $"\\[{i+1}\\][^!]*", "'$&'");
+                    fullAddress = Regex.Replace(fullAddress, $"[^']\\[{i+1}\\][^!]*[^']", "'$&'");
                     fullAddress = fullAddress.Replace($"[{i+1}]", ExternalLinkToString(this.Workbook._externalReferences[i]));
                 }
                 return fullAddress;

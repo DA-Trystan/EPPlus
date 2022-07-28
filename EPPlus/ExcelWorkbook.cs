@@ -50,6 +50,9 @@ using OfficeOpenXml.Packaging.Ionic.Zip;
 using System.Drawing;
 using OfficeOpenXml.Style;
 using OfficeOpenXml.Compatibility;
+using OfficeOpenXml.Packaging;
+using System.Text.RegularExpressions;
+using System.Linq;
 
 namespace OfficeOpenXml
 {
@@ -1093,8 +1096,43 @@ namespace OfficeOpenXml
 			var pivotCaches = WorkbookXml.SelectSingleNode("//d:pivotCaches", NameSpaceManager);
 			pivotCaches.AppendChild(item);
 		}
-		internal List<string> _externalReferences = new List<string>();
-        //internal bool _isCalculated=false;
+		internal List<ZipPackageRelationship> _externalReferences = new List<ZipPackageRelationship>();
+		//internal bool _isCalculated=false;
+
+		/// <summary>
+		/// Formulas with links return values in the form [1]SheetName!A1, this function returns the human readable formula
+		/// </summary>
+		/// <param name="formulaValue">the [1] form formula value</param>
+		/// <returns>The fully qualified formula value</returns>
+		public string FullyQualifyLinks(string formulaValue)
+		{
+			for (int i = 0; i < _externalReferences.Count; i++)
+			{
+				formulaValue = Regex.Replace(formulaValue, $"[^']\\[{i + 1}\\][^!]*[^']", "'$&'");
+				formulaValue = formulaValue.Replace($"[{i + 1}]", ExternalLinkToString(_externalReferences[i].TargetUri.AbsoluteUri,formula:true));
+			}
+			return formulaValue;
+		}
+		internal string ExternalLinkToString(string link, bool formula)
+		{
+			if (link.StartsWith("/")) //is current root drive
+			{
+				var root = Directory.GetDirectoryRoot(_package.File.FullName);
+				link = root + link;
+			}
+			else if (!link.Contains("/"))
+			{
+				var dir = _package.File.Directory.FullName;
+				link = dir + "/" + link;
+			}
+			var split = link.Split(new char[] { Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar }, StringSplitOptions.RemoveEmptyEntries);
+			if (formula && split.Length > 0)
+			{
+				split[split.Length - 1] = "[" + split[split.Length - 1] + "]";
+			}
+			return String.Join("/", split);
+		}
+
 		internal void GetExternalReferences()
 		{
 			XmlNodeList nl = WorkbookXml.SelectNodes("//d:externalReferences/d:externalReference", NameSpaceManager);
@@ -1115,7 +1153,8 @@ namespace OfficeOpenXml
 						var rel_extRef = part.GetRelationship(rId_ExtRef);
 						if (rel_extRef != null)
 						{
-							_externalReferences.Add(rel_extRef.TargetUri.OriginalString);
+							//rel_extRef.TargetUri.OriginalString
+							_externalReferences.Add(rel_extRef);
 						}
 
 					}
@@ -1123,7 +1162,36 @@ namespace OfficeOpenXml
 			}
 		}
 
-        public void Dispose()
+		/// <summary>
+		/// Gets the external references (links) in a workbook
+		/// </summary>
+		/// <returns>returns the external links in a file</returns>
+		public string[] Links
+        {
+			get
+			{
+				return _externalReferences.Select(l => ExternalLinkToString(l.TargetUri.OriginalString,formula:false)).ToArray();
+			}
+        }
+
+		/// <summary>
+		/// Modifies and external reference (link)
+		/// </summary>
+		/// <param name="index">index of the link</param>
+		/// <param name="link">the URI to change the link to</param>
+		/// <exception cref="IndexOutOfRangeException"></exception>
+		public void UpdateLink(int index, Uri link)
+        {
+			if (index >= 0 && index < _externalReferences.Count)
+			{
+				_externalReferences[index].TargetUri = link;
+			} else
+            {
+				throw new IndexOutOfRangeException($"No Link found at position {index} in List({_externalReferences.Count})");
+            }
+		}
+
+		public void Dispose()
         {
             if (_sharedStrings != null)
             {

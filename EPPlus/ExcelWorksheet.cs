@@ -4375,26 +4375,6 @@ namespace OfficeOpenXml
             }
         }
 
-        internal string ExternalLinkToString(string link)
-        {
-            if (link.StartsWith("/")) //is current root drive
-            {
-                var root = Directory.GetDirectoryRoot(this.Workbook._package.File.FullName);
-                link = root+link;
-            }
-            else if (!link.Contains("/"))
-            {
-                var dir = this.Workbook._package.File.Directory.FullName;
-                link = dir + "/" + link;
-            }
-            var split = link.Split(new char[] { Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar }, StringSplitOptions.RemoveEmptyEntries);
-            if (split.Length > 0)
-            {
-                split[split.Length - 1] = "[" + split[split.Length - 1] + "]";
-            }
-            return String.Join("/", split);
-        }
-
         internal string GetFormula(int row, int col)
         {
             var v = _formulas.GetValue(row, col);
@@ -4404,11 +4384,6 @@ namespace OfficeOpenXml
             }
             else if (v != null && v is string fullAddress)
             {
-                for (int i = 0; i < Workbook._externalReferences.Count; i++)
-                {
-                    fullAddress = Regex.Replace(fullAddress, $"[^']\\[{i+1}\\][^!]*[^']", "'$&'");
-                    fullAddress = fullAddress.Replace($"[{i+1}]", ExternalLinkToString(this.Workbook._externalReferences[i]));
-                }
                 return fullAddress;
             }
             else

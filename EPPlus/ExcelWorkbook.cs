@@ -1109,7 +1109,7 @@ namespace OfficeOpenXml
 			for (int i = 0; i < _externalReferences.Count; i++)
 			{
 				formulaValue = Regex.Replace(formulaValue, $"[^']\\[{i + 1}\\][^!]*[^']", "'$&'");
-				formulaValue = formulaValue.Replace($"[{i + 1}]", ExternalLinkToString(_externalReferences[i].TargetUri.AbsoluteUri,formula:true));
+				formulaValue = formulaValue.Replace($"[{i + 1}]", ExternalLinkToString(_externalReferences[i].TargetUri.OriginalString,formula:true));
 			}
 			return formulaValue;
 		}

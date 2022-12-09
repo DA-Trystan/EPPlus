@@ -1163,15 +1163,27 @@ namespace OfficeOpenXml
 		}
 
 		/// <summary>
-		/// Gets the external references (links) in a workbook
+		/// Gets the fully qualified external references (links) in a workbook
 		/// </summary>
-		/// <returns>returns the external links in a file</returns>
+		/// <returns>returns the fully qualified external links in a file</returns>
 		public string[] Links
         {
 			get
 			{
 				return _externalReferences.Select(l => ExternalLinkToString(l.TargetUri.OriginalString,formula:false)).ToArray();
 			}
+        }
+
+        /// <summary>
+        /// Gets the external references (links) in a workbook
+        /// </summary>
+        /// <returns>returns the external links in a file</returns>
+        public string[] ExternalReferences
+		{
+            get
+            {
+                return _externalReferences.Select(l => l.TargetUri.OriginalString).ToArray();
+            }
         }
 
 		/// <summary>
